@@ -10,3 +10,6 @@ include_directories(${OpenCV_INCLUDES})
 add_executable(opencv_hist main.cpp)
 
 target_link_libraries(opencv_hist ${OpenCV_LIBS})
+
+install(TARGETS opencv_hist
+        RUNTIME DESTINATION bin)
