@@ -1,26 +1,25 @@
 FROM arm32v6/alpine
 
-RUN \
-    apk add --no-cache \
-        linux-headers \
-        gcc \
-        g++ \
-        git \
-        make \
-        cmake \
-        raspberrypi \
-        v4l-utils \
-        python3
+# arguments
+ARG OPENCV_VERSION=3.1.0
 
-ENV OPENCV_VERSION=3.1.0
+# dependencies
+RUN apk add --no-cache \
+    linux-headers \
+    gcc \
+    g++ \
+    git \
+    make \
+    cmake \
+    raspberrypi
 
-RUN mkdir /work && cd /work && \
-  wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip && \
+
+# opencv
+RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip && \
   unzip ${OPENCV_VERSION}.zip && \
-  rm -rf ${OPENCV_VERSION}.zip
-
-RUN mkdir -p /work/opencv-${OPENCV_VERSION}/build && \
-  cd /work/opencv-${OPENCV_VERSION}/build && \
+  rm -rf ${OPENCV_VERSION}.zip && \
+  mkdir -p opencv-${OPENCV_VERSION}/build && \
+  cd opencv-${OPENCV_VERSION}/build && \
   cmake \
   -D CMAKE_BUILD_TYPE=RELEASE \
   -D CMAKE_INSTALL_PREFIX=/usr/local \
@@ -35,15 +34,16 @@ RUN mkdir -p /work/opencv-${OPENCV_VERSION}/build && \
   -D BUILD_opencv_python2=NO \
   -D BUILD_opencv_python3=NO \
   .. && \
-  make && \
+  make -j`nproc` && \
   make install && \
-  rm -rf /work/opencv-${OPENCV_VERSION} 
+  rm -rf /opencv-${OPENCV_VERSION}
 
-COPY src/** /work/app/
-RUN cd /work/app/ && \ 
-    cmake && \
+# our app
+COPY src/** /app/
+RUN mkdir -p /app/build && cd /app/build && cmake .. && \
     make && \
     make install && \
-    rm /work -rf 
+    rm /app -rf
 
-CMD ["/usr/local/bin/opencv_hist", "0"]
+ENTRYPOINT ["/usr/local/bin/opencv_hist"]
+CMD ["0"]
